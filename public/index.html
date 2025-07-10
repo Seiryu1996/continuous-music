@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Continuous Music - YouTube Repeat Player</title>
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#667eea">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>🎵 Continuous Music</h1>
+            <p>YouTube動画をリピート再生できるサービス</p>
+        </header>
+
+        <main class="main-content">
+            <section class="search-section">
+                <div class="playlist-selector">
+                    <label for="target-playlist">追加先:</label>
+                    <select id="target-playlist">
+                        <option value="current">現在のプレイリスト</option>
+                        <option value="new">新規プレイリスト作成</option>
+                    </select>
+                    <input type="text" id="new-playlist-name" placeholder="新規プレイリスト名..." style="display: none;" />
+                </div>
+                <div class="search-box">
+                    <input type="text" id="youtube-url" placeholder="YouTube URLを入力してください..." />
+                    <button id="add-video">追加</button>
+                </div>
+                <div class="search-box">
+                    <input type="text" id="video-search" placeholder="動画タイトルで検索..." />
+                    <button id="search-video">検索</button>
+                </div>
+            </section>
+
+            <section class="player-section">
+                <div class="video-container">
+                    <div id="youtube-player"></div>
+                </div>
+                <div class="progress-container">
+                    <div class="progress-bar" id="progress-bar">
+                        <div class="progress-buffered" id="progress-buffered"></div>
+                        <div class="progress-filled" id="progress-filled"></div>
+                    </div>
+                    <div class="progress-time">
+                        <span id="current-time">0:00</span>
+                        <span id="duration">0:00</span>
+                    </div>
+                </div>
+                <div class="controls">
+                    <button id="prev-btn">⏮️</button>
+                    <button id="play-pause-btn">▶️</button>
+                    <button id="next-btn">⏭️</button>
+                    <button id="repeat-btn" class="repeat-off">🔄</button>
+                    <button id="shuffle-btn">🔀</button>
+                    <button id="background-btn" class="background-off">🎧</button>
+                </div>
+            </section>
+
+            <section class="playlist-section">
+                <div class="playlist-header">
+                    <h3>プレイリスト</h3>
+                    <div class="playlist-actions">
+                        <input type="text" id="playlist-name" placeholder="プレイリスト名..." />
+                        <button id="save-playlist">保存</button>
+                        <button id="export-playlist">端末に保存</button>
+                        <input type="file" id="import-playlist" accept=".txt,.json" style="display: none" />
+                        <button id="import-playlist-btn">端末から読込</button>
+                    </div>
+                </div>
+                <div class="current-playlist">
+                    <div class="playlist-title">
+                        <h4 id="current-playlist-title">現在のプレイリスト</h4>
+                        <button id="save-current-playlist" style="display: none;">保存</button>
+                    </div>
+                    <ul id="video-list"></ul>
+                </div>
+                <div class="saved-playlists">
+                    <h4>保存されたプレイリスト</h4>
+                    <ul id="saved-playlists"></ul>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="https://www.youtube.com/iframe_api"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
