@@ -14,6 +14,10 @@
   "keywords": ["youtube", "repeat", "playlist", "music", "streaming"],
   "author": "",
   "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  },
   "dependencies": {
     "express": "^4.18.2",
     "socket.io": "^4.7.2",

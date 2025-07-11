@@ -16,6 +16,11 @@ const io = new Server(server, {
 
 const PORT = process.env.PORT || 3000;
 
+// Render用のヘルスチェックエンドポイント
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'OK', timestamp: new Date().toISOString() });
+});
+
 app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
