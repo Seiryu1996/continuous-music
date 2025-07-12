@@ -117,7 +117,7 @@ class ContinuousMusic {
         return match ? match[1] : null;
     }
 
-    addVideo() {
+    async addVideo() {
         const url = document.getElementById('youtube-url').value.trim();
         if (!url) return;
 
@@ -129,12 +129,20 @@ class ContinuousMusic {
 
         const targetPlaylist = document.getElementById('target-playlist').value;
         
-        this.fetchVideoInfo(videoId).then(info => {
+        try {
+            // 動画の埋め込み可能性をチェック
+            const videoInfo = await this.checkVideoEmbeddable(videoId);
+            
+            if (!videoInfo.embeddable) {
+                alert(`この動画は追加できません。理由: ${videoInfo.restrictionReason || '再生制限'}`);
+                return;
+            }
+            
             const video = {
                 id: videoId,
-                title: info.title,
-                thumbnail: info.thumbnail,
-                duration: info.duration
+                title: videoInfo.title,
+                thumbnail: videoInfo.thumbnail,
+                duration: videoInfo.duration
             };
             
             if (targetPlaylist === 'new') {
@@ -157,7 +165,11 @@ class ContinuousMusic {
             
             document.getElementById('youtube-url').value = '';
             document.getElementById('new-playlist-name').value = '';
-        });
+            this.showNotification(`「${video.title}」を追加しました`);
+        } catch (error) {
+            console.error('動画追加エラー:', error);
+            alert('動画の情報取得に失敗しました。再度お試しください。');
+        }
     }
 
     async fetchVideoInfo(videoId) {
@@ -1136,6 +1148,20 @@ class ContinuousMusic {
         }, 3000);
     }
 
+    async checkVideoEmbeddable(videoId) {
+        try {
+            const response = await fetch(`/api/video/${videoId}`);
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || '動画情報の取得に失敗しました');
+            }
+            return await response.json();
+        } catch (error) {
+            console.error('動画チェックエラー:', error);
+            throw error;
+        }
+    }
+
     createSearchResultsContainer() {
         const searchSection = document.querySelector('.search-section');
         const resultsContainer = document.createElement('div');
@@ -1198,15 +1224,23 @@ class ContinuousMusic {
         return div.innerHTML.replace(/'/g, '&#39;');
     }
 
-    addVideoFromSearch(videoId, title) {
+    async addVideoFromSearch(videoId, title) {
         const targetPlaylist = document.getElementById('target-playlist').value;
         
-        this.fetchVideoInfo(videoId).then(info => {
+        try {
+            // 動画の埋め込み可能性を再チェック（検索結果では既にフィルタリング済みだが念のため）
+            const videoInfo = await this.checkVideoEmbeddable(videoId);
+            
+            if (!videoInfo.embeddable) {
+                alert(`この動画は追加できません。理由: ${videoInfo.restrictionReason || '再生制限'}`);
+                return;
+            }
+            
             const video = {
                 id: videoId,
-                title: title,
-                thumbnail: info.thumbnail,
-                duration: info.duration
+                title: videoInfo.title,
+                thumbnail: videoInfo.thumbnail,
+                duration: videoInfo.duration
             };
             
             if (targetPlaylist === 'new') {
@@ -1227,8 +1261,11 @@ class ContinuousMusic {
                 this.addToExistingPlaylist(targetPlaylist, video);
             }
             
-            this.showNotification(`「${title}」を追加しました`);
-        });
+            this.showNotification(`「${video.title}」を追加しました`);
+        } catch (error) {
+            console.error('動画追加エラー:', error);
+            alert('動画の追加に失敗しました。');
+        }
     }
 }
 

@@ -78,13 +78,23 @@ app.get('/api/search', async (req, res) => {
       return res.status(response.status).json({ error: data.error?.message || 'YouTube API エラー' });
     }
 
-    const videos = data.items?.map(item => ({
-      id: item.id.videoId,
-      title: item.snippet.title,
-      thumbnail: item.snippet.thumbnails.medium.url,
-      channelTitle: item.snippet.channelTitle,
-      publishedAt: item.snippet.publishedAt
-    })) || [];
+    const videoIds = data.items?.map(item => item.id.videoId).filter(Boolean) || [];
+    
+    // 動画の詳細情報と埋め込み制限をチェック
+    const videosData = await checkVideosEmbeddable(videoIds, YOUTUBE_API_KEY);
+    
+    const videos = data.items?.map(item => {
+      const videoData = videosData.find(v => v.id === item.id.videoId);
+      return {
+        id: item.id.videoId,
+        title: item.snippet.title,
+        thumbnail: item.snippet.thumbnails.medium.url,
+        channelTitle: item.snippet.channelTitle,
+        publishedAt: item.snippet.publishedAt,
+        embeddable: videoData?.embeddable || false,
+        restrictionReason: videoData?.restrictionReason || null
+      };
+    }).filter(video => video.embeddable) || []; // 埋め込み可能な動画のみ返す
 
     console.log(`Returning ${videos.length} videos`);
     res.json({ videos });
@@ -94,6 +104,102 @@ app.get('/api/search', async (req, res) => {
     res.status(500).json({ error: 'サーバーエラーが発生しました: ' + error.message });
   }
 });
+
+// 単一動画の情報と埋め込み可能性をチェックするAPIエンドポイント
+app.get('/api/video/:videoId', async (req, res) => {
+  console.log('Video check request:', req.params.videoId);
+  
+  try {
+    const { videoId } = req.params;
+    
+    if (!YOUTUBE_API_KEY) {
+      return res.status(500).json({ error: 'YouTube API キーが設定されていません' });
+    }
+
+    if (!fetch) {
+      return res.status(500).json({ error: 'fetch機能が利用できません' });
+    }
+
+    const videoUrl = `https://www.googleapis.com/youtube/v3/videos?part=snippet,status,contentDetails&id=${videoId}&key=${YOUTUBE_API_KEY}`;
+    const response = await fetch(videoUrl);
+    const data = await response.json();
+
+    if (!response.ok) {
+      console.error('Video API error:', data);
+      return res.status(response.status).json({ error: data.error?.message || 'YouTube API エラー' });
+    }
+
+    if (!data.items || data.items.length === 0) {
+      return res.status(404).json({ error: '動画が見つかりません' });
+    }
+
+    const video = data.items[0];
+    const embeddable = video.status?.embeddable !== false && 
+                      !video.contentDetails?.regionRestriction?.blocked?.includes('JP');
+
+    res.json({
+      id: video.id,
+      title: video.snippet.title,
+      thumbnail: video.snippet.thumbnails.medium?.url || video.snippet.thumbnails.default?.url,
+      channelTitle: video.snippet.channelTitle,
+      duration: formatDuration(video.contentDetails.duration),
+      embeddable: embeddable,
+      restrictionReason: embeddable ? null : getRestrictionReason(video)
+    });
+  } catch (error) {
+    console.error('動画チェックエラー:', error);
+    res.status(500).json({ error: 'サーバーエラーが発生しました: ' + error.message });
+  }
+});
+
+function formatDuration(isoDuration) {
+  if (!isoDuration) return '00:00';
+  const match = isoDuration.match(/PT(\d+H)?(\d+M)?(\d+S)?/);
+  const hours = (match[1] || '').replace('H', '');
+  const minutes = (match[2] || '').replace('M', '');
+  const seconds = (match[3] || '').replace('S', '');
+  
+  if (hours) {
+    return `${hours}:${minutes.padStart(2, '0')}:${seconds.padStart(2, '0')}`;
+  }
+  return `${minutes || '0'}:${seconds.padStart(2, '0')}`;
+}
+
+// 動画の埋め込み可能性をチェックする関数
+async function checkVideosEmbeddable(videoIds, apiKey) {
+  if (!videoIds.length) return [];
+  
+  try {
+    const videoUrl = `https://www.googleapis.com/youtube/v3/videos?part=status,contentDetails&id=${videoIds.join(',')}&key=${apiKey}`;
+    const response = await fetch(videoUrl);
+    const data = await response.json();
+    
+    if (!response.ok) {
+      console.error('Videos API error:', data);
+      return [];
+    }
+    
+    return data.items?.map(item => ({
+      id: item.id,
+      embeddable: item.status?.embeddable !== false && 
+                 !item.contentDetails?.regionRestriction?.blocked?.includes('JP'),
+      restrictionReason: getRestrictionReason(item)
+    })) || [];
+  } catch (error) {
+    console.error('Error checking video embeddability:', error);
+    return [];
+  }
+}
+
+function getRestrictionReason(videoItem) {
+  if (videoItem.status?.embeddable === false) {
+    return '埋め込み無効';
+  }
+  if (videoItem.contentDetails?.regionRestriction?.blocked?.includes('JP')) {
+    return '地域制限';
+  }
+  return null;
+}
 
 io.on('connection', (socket) => {
   console.log('User connected:', socket.id);
