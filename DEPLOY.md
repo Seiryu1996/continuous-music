@@ -108,6 +108,11 @@ npm install
 npm start  # ローカルで動作確認
 ```
 
+**webpack-cli エラー**
+- webpack関連のパッケージをdependenciesに移動済み
+- ビルドコマンドを簡素化済み
+- 静的ファイルを直接提供する構成
+
 **APIキーエラー**
 - Render環境変数で`YOUTUBE_API_KEY`が正しく設定されているか確認
 - YouTube Data API v3が有効化されているか確認

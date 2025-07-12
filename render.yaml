@@ -3,7 +3,7 @@ services:
     name: continuous-music
     env: node
     plan: free
-    buildCommand: npm install
+    buildCommand: npm install --production=false
     startCommand: npm start
     healthCheckPath: /health
     envVars:
