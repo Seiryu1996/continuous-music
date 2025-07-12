@@ -9,7 +9,8 @@
     "test": "jest",
     "lint": "eslint .",
     "build": "npm run build:client",
-    "build:client": "webpack --mode production"
+    "build:client": "webpack --mode production",
+    "postinstall": "npm run build"
   },
   "keywords": [
     "youtube",
@@ -21,8 +22,8 @@
   "author": "",
   "license": "MIT",
   "engines": {
-    "node": ">=18.0.0",
-    "npm": ">=8.0.0"
+    "node": ">=20.0.0",
+    "npm": ">=9.0.0"
   },
   "dependencies": {
     "cors": "^2.8.5",
