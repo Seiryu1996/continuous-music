@@ -10,6 +10,7 @@ services:
       - PORT=3000
     volumes:
       - ./public:/app/public
+      - ./server.js:/app/server.js
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3000"]

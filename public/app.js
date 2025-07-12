@@ -25,11 +25,15 @@ class ContinuousMusic {
         this.setupYouTubePlayer();
         this.setupBackgroundPlayback();
         this.registerServiceWorker();
+        this.createSearchResultsContainer();
     }
 
     setupEventListeners() {
         document.getElementById('add-video').addEventListener('click', () => this.addVideo());
         document.getElementById('search-video').addEventListener('click', () => this.searchVideo());
+        document.getElementById('video-search').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') this.searchVideo();
+        });
         document.getElementById('youtube-url').addEventListener('keypress', (e) => {
             if (e.key === 'Enter') this.addVideo();
         });
@@ -453,13 +457,35 @@ class ContinuousMusic {
         }
     }
 
-    searchVideo() {
+    async searchVideo() {
         const query = document.getElementById('video-search').value.trim();
         if (!query) return;
         
-        // YouTube Data APIを使用した検索機能の実装
-        // 実際のAPI実装では、サーバーサイドで検索を行う
-        alert('検索機能は実装中です');
+        this.showSearchLoading(true);
+        
+        try {
+            const response = await fetch(`/api/search?q=${encodeURIComponent(query)}&maxResults=10`);
+            
+            console.log('Response status:', response.status);
+            console.log('Response headers:', Object.fromEntries(response.headers.entries()));
+            
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error('Error response:', errorText);
+                throw new Error(`検索に失敗しました (${response.status}): ${errorText}`);
+            }
+            
+            const data = await response.json();
+            console.log('Search data:', data);
+            
+            this.displaySearchResults(data.videos);
+        } catch (error) {
+            console.error('検索エラー:', error);
+            console.error('Error stack:', error.stack);
+            alert(error.message || '検索中にエラーが発生しました');
+        } finally {
+            this.showSearchLoading(false);
+        }
     }
 
     // プログレスバー関連のメソッド
@@ -1108,6 +1134,101 @@ class ContinuousMusic {
                 }
             }, 300);
         }, 3000);
+    }
+
+    createSearchResultsContainer() {
+        const searchSection = document.querySelector('.search-section');
+        const resultsContainer = document.createElement('div');
+        resultsContainer.id = 'search-results';
+        resultsContainer.className = 'search-results';
+        resultsContainer.style.display = 'none';
+        searchSection.appendChild(resultsContainer);
+    }
+
+    showSearchLoading(show) {
+        const btn = document.getElementById('search-video');
+        if (show) {
+            btn.textContent = '検索中...';
+            btn.disabled = true;
+        } else {
+            btn.textContent = '検索';
+            btn.disabled = false;
+        }
+    }
+
+    displaySearchResults(videos) {
+        const container = document.getElementById('search-results');
+        
+        if (videos.length === 0) {
+            container.innerHTML = '<p class="no-results">検索結果が見つかりませんでした。</p>';
+            container.style.display = 'block';
+            return;
+        }
+        
+        container.innerHTML = `
+            <div class="search-results-header">
+                <h4>検索結果 (${videos.length}件)</h4>
+                <button class="close-results" onclick="app.closeSearchResults()">×</button>
+            </div>
+            <div class="search-results-list">
+                ${videos.map(video => `
+                    <div class="search-result-item" onclick="app.addVideoFromSearch('${video.id}', '${this.escapeHtml(video.title)}')">
+                        <img src="${video.thumbnail}" alt="thumbnail" class="result-thumbnail">
+                        <div class="result-info">
+                            <div class="result-title">${video.title}</div>
+                            <div class="result-channel">${video.channelTitle}</div>
+                        </div>
+                        <button class="add-video-btn" onclick="event.stopPropagation(); app.addVideoFromSearch('${video.id}', '${this.escapeHtml(video.title)}')">追加</button>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+        
+        container.style.display = 'block';
+    }
+
+    closeSearchResults() {
+        const container = document.getElementById('search-results');
+        container.style.display = 'none';
+    }
+
+    escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML.replace(/'/g, '&#39;');
+    }
+
+    addVideoFromSearch(videoId, title) {
+        const targetPlaylist = document.getElementById('target-playlist').value;
+        
+        this.fetchVideoInfo(videoId).then(info => {
+            const video = {
+                id: videoId,
+                title: title,
+                thumbnail: info.thumbnail,
+                duration: info.duration
+            };
+            
+            if (targetPlaylist === 'new') {
+                const newPlaylistName = document.getElementById('new-playlist-name').value.trim();
+                if (!newPlaylistName) {
+                    alert('新規プレイリスト名を入力してください');
+                    return;
+                }
+                this.addToNewPlaylist(newPlaylistName, video);
+            } else if (targetPlaylist === 'current') {
+                this.currentPlaylist.push(video);
+                this.updateVideoList();
+                this.autoSaveCurrentPlaylist();
+                if (this.currentPlaylist.length === 1) {
+                    this.playVideo(0);
+                }
+            } else {
+                this.addToExistingPlaylist(targetPlaylist, video);
+            }
+            
+            this.showNotification(`「${title}」を追加しました`);
+        });
     }
 }
 
