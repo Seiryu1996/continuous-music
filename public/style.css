@@ -9,6 +9,24 @@ body {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     min-height: 100vh;
     color: #333;
+    /* タッチデバイス用の最適化 */
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    /* スクロールの改善 */
+    -webkit-overflow-scrolling: touch;
+}
+
+/* テキスト入力フィールドは選択可能にする */
+input, textarea {
+    -webkit-user-select: text;
+    -khtml-user-select: text;
+    -moz-user-select: text;
+    -ms-user-select: text;
+    user-select: text;
 }
 
 .container {
@@ -208,11 +226,21 @@ body {
     cursor: pointer;
     font-size: 16px;
     transition: all 0.3s ease;
+    min-height: 44px; /* タッチターゲットサイズ */
+    min-width: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .controls button:hover {
     background: #5a6fd8;
     transform: scale(1.05);
+}
+
+.controls button:active {
+    transform: scale(0.95);
+    background: #4a5bc8;
 }
 
 .repeat-off {
@@ -533,32 +561,182 @@ body {
     cursor: not-allowed;
 }
 
-@media (max-width: 768px) {
-    .main-content {
-        grid-template-columns: 1fr;
+/* タブレット向け */
+@media (max-width: 1024px) {
+    .container {
+        padding: 15px;
     }
     
-    .playlist-header {
-        flex-direction: column;
+    .header h1 {
+        font-size: 2.2em;
+    }
+    
+    .main-content {
+        gap: 20px;
+    }
+}
+
+/* スマホ向け */
+@media (max-width: 768px) {
+    .container {
+        padding: 10px;
+    }
+    
+    .header {
+        margin-bottom: 20px;
+    }
+    
+    .header h1 {
+        font-size: 1.8em;
+        margin-bottom: 5px;
+    }
+    
+    .header p {
+        font-size: 1em;
+    }
+    
+    .main-content {
+        grid-template-columns: 1fr;
         gap: 15px;
     }
     
-    .playlist-actions {
+    .search-section, .player-section {
+        padding: 15px;
+    }
+    
+    .playlist-section {
+        padding: 15px;
+    }
+    
+    /* 検索セクション */
+    .playlist-selector {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
+    }
+    
+    .playlist-selector select,
+    .playlist-selector input {
         width: 100%;
+    }
+    
+    .search-box {
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    .search-box input,
+    .search-box button {
+        width: 100%;
+        font-size: 16px; /* iOS zoom防止 */
+    }
+    
+    /* プレイヤーセクション */
+    .video-container {
+        height: 200px;
+    }
+    
+    .controls {
+        gap: 10px;
+        flex-wrap: wrap;
         justify-content: center;
     }
     
-    .playlist-actions input {
-        flex: 1;
+    .controls button {
+        padding: 10px 14px;
+        font-size: 14px;
+    }
+    
+    .progress-container {
+        padding: 0 5px;
+    }
+    
+    .progress-bar {
+        height: 10px;
+    }
+    
+    /* プレイリストセクション */
+    .playlist-header {
+        flex-direction: column;
+        gap: 15px;
+        align-items: stretch;
+    }
+    
+    .playlist-actions {
+        flex-direction: column;
+        gap: 10px;
+        width: 100%;
+    }
+    
+    .playlist-actions input,
+    .playlist-actions button {
+        width: 100%;
+        font-size: 16px; /* iOS zoom防止 */
+    }
+    
+    .playlist-title {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+    }
+    
+    .playlist-title button {
+        width: 100%;
+    }
+    
+    /* 動画リスト */
+    .video-item {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+        padding: 15px;
+    }
+    
+    .video-thumbnail {
+        width: 100%;
+        height: auto;
+        max-width: 200px;
+        align-self: center;
+        margin-right: 0;
+    }
+    
+    .video-info {
+        text-align: center;
+    }
+    
+    .video-title {
+        font-size: 16px;
+        white-space: normal;
+        overflow: visible;
+        text-overflow: unset;
+    }
+    
+    .video-actions {
+        justify-content: center;
+        gap: 8px;
+    }
+    
+    .video-actions button {
+        padding: 8px 12px;
+        font-size: 14px;
+    }
+    
+    /* 検索結果 */
+    .search-results-list {
+        max-height: 300px;
     }
     
     .search-result-item {
         flex-direction: column;
-        align-items: flex-start;
+        align-items: stretch;
         gap: 10px;
+        padding: 15px;
     }
     
     .result-thumbnail {
+        width: 100%;
+        height: auto;
+        max-width: 200px;
         align-self: center;
         margin-right: 0;
     }
@@ -568,8 +746,56 @@ body {
         text-align: center;
     }
     
+    .result-title,
+    .result-channel {
+        white-space: normal;
+        overflow: visible;
+        text-overflow: unset;
+    }
+    
     .add-video-btn {
         align-self: center;
         margin-left: 0;
+        width: 100%;
+        max-width: 200px;
+    }
+    
+    /* プレイリストアイテム */
+    .playlist-item {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+    }
+    
+    .playlist-actions {
+        justify-content: center;
+    }
+}
+
+/* 小さなスマホ向け */
+@media (max-width: 480px) {
+    .container {
+        padding: 5px;
+    }
+    
+    .search-section, .player-section, .playlist-section {
+        padding: 10px;
+    }
+    
+    .header h1 {
+        font-size: 1.5em;
+    }
+    
+    .video-container {
+        height: 180px;
+    }
+    
+    .controls button {
+        padding: 8px 12px;
+        font-size: 12px;
+    }
+    
+    #video-list, #saved-playlists {
+        max-height: 250px;
     }
 }
